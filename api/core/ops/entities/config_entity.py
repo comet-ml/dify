@@ -6,6 +6,7 @@ from pydantic import BaseModel, ValidationInfo, field_validator
 class TracingProviderEnum(Enum):
     LANGFUSE = "langfuse"
     LANGSMITH = "langsmith"
+    OPIK = "opik"
 
 
 class BaseTracingConfig(BaseModel):
@@ -54,6 +55,35 @@ class LangSmithConfig(BaseTracingConfig):
             raise ValueError("endpoint must start with https://")
 
         return v
+
+
+class OpikConfig(BaseTracingConfig):
+    """
+    Model class for Opik tracing config.
+    """
+
+    api_key: str | None = None
+    project: str | None = None
+    workspace: str | None = None
+    url: str = "https://www.comet.com/opik/api/"
+
+    @field_validator("project")
+    @classmethod
+    def set_value(cls, v, info: ValidationInfo):
+        if v is None or v == "":
+            v = "Default Project"
+        # if not v.startswith("https://"):
+        #     raise ValueError("endpoint must start with https://")
+
+        return v
+
+    # @field_validator("api_key")
+    # @classmethod
+    # def set_value(cls, v, info: ValidationInfo):
+    #     if v is None or v == "":
+    #         return None
+
+    #     return v
 
 
 OPS_FILE_PATH = "ops_trace/"
