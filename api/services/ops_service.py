@@ -96,7 +96,7 @@ class OpsService:
         if tracing_provider == "langfuse":
             project_key = OpsTraceManager.get_trace_config_project_key(tracing_config, tracing_provider)
             project_url = "{host}/project/{key}".format(host=tracing_config.get("host"), key=project_key)
-        elif tracing_provider == "langsmith" or tracing_provider == "opik":
+        elif tracing_provider in ("langsmith", "opik"):
             project_url = OpsTraceManager.get_trace_config_project_url(tracing_config, tracing_provider)
         else:
             project_url = None
