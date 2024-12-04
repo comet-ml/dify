@@ -55,7 +55,7 @@ provider_config_map = {
     TracingProviderEnum.OPIK.value: {
         "config_class": OpikConfig,
         "secret_keys": ["api_key"],
-        "other_keys": ["project", "url"],
+        "other_keys": ["project", "url", "workspace"],
         "trace_instance": OpikDataTrace,
     },
 }

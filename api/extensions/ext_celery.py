@@ -96,6 +96,6 @@ def init_app(app: Flask) -> Celery:
     celery_app.conf.update(beat_schedule=beat_schedule, imports=imports)
 
     # TODO: Remove me
-    celery_app.conf.update(task_always_eager=True, task_eager_propagates=True)
+    # celery_app.conf.update(task_always_eager=True, task_eager_propagates=True)
 
     return celery_app

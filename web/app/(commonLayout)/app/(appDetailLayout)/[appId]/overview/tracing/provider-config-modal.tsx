@@ -46,6 +46,7 @@ const opikConfigTemplate = {
   api_key: '',
   project: '',
   url: '',
+  workspace: '',
 }
 
 const ProviderConfigModal: FC<Props> = ({
@@ -247,8 +248,8 @@ const ProviderConfigModal: FC<Props> = ({
                           <Field
                             label='Workspace'
                             labelClassName='!text-sm'
-                            value={(config as OpikConfig).Workspace}
-                            onChange={handleConfigChange('Workspace')}
+                            value={(config as OpikConfig).workspace}
+                            onChange={handleConfigChange('workspace')}
                             placeholder={'default'}
                           />
                           <Field
