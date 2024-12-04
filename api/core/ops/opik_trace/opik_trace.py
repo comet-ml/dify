@@ -1,7 +1,7 @@
 import json
 import logging
-import uuid
 import os
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -60,7 +60,6 @@ def convert_uuid4_to_uuid7(user_provide_uuidv4, ns):
     assert uuidv4.version == 4
     rand = uuidv4.bytes[-6:]
     final_uuid = f"{t1:>08x}-{t2:>04x}-{t3:>04x}-{t4:>04x}-{rand.hex()}"
-
 
     return final_uuid
 
@@ -217,7 +216,6 @@ class OpikDataTrace(BaseTraceInstance):
             total_tokens = 0
             completion_tokens = 0
             prompt_tokens = 0
-
 
             if process_data and process_data.get("model_mode") == "chat":
                 run_type = "llm"
