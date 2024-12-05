@@ -74,7 +74,8 @@ const Panel: FC = () => {
 
   const [langSmithConfig, setLangSmithConfig] = useState<LangSmithConfig | null>(null)
   const [langFuseConfig, setLangFuseConfig] = useState<LangFuseConfig | null>(null)
-  const hasConfiguredTracing = !!(langSmithConfig || langFuseConfig)
+  const [opikConfig, setOpikConfig] = useState<OpikConfig | null>(null)
+  const hasConfiguredTracing = !!(langSmithConfig || langFuseConfig || opikConfig)
 
   const fetchTracingConfig = async () => {
     const { tracing_config: langSmithConfig, has_not_configured: langSmithHasNotConfig } = await doFetchTracingConfig({ appId, provider: TracingProvider.langSmith })
@@ -83,6 +84,9 @@ const Panel: FC = () => {
     const { tracing_config: langFuseConfig, has_not_configured: langFuseHasNotConfig } = await doFetchTracingConfig({ appId, provider: TracingProvider.langfuse })
     if (!langFuseHasNotConfig)
       setLangFuseConfig(langFuseConfig as LangFuseConfig)
+    const { tracing_config: opikConfig, has_not_configured: OpikHasNotConfig } = await doFetchTracingConfig({ appId, provider: TracingProvider.opik })
+    if (!OpikHasNotConfig)
+      setOpikConfig(opikConfig as OpikConfig)
   }
 
   const handleTracingConfigUpdated = async (provider: TracingProvider) => {
@@ -90,15 +94,19 @@ const Panel: FC = () => {
     const { tracing_config } = await doFetchTracingConfig({ appId, provider })
     if (provider === TracingProvider.langSmith)
       setLangSmithConfig(tracing_config as LangSmithConfig)
-    else
+    else if (provider === TracingProvider.langSmith)
       setLangFuseConfig(tracing_config as LangFuseConfig)
+    else if (provider === TracingProvider.opik)
+      setOpikConfig(tracing_config as OpikConfig)
   }
 
   const handleTracingConfigRemoved = (provider: TracingProvider) => {
     if (provider === TracingProvider.langSmith)
       setLangSmithConfig(null)
-    else
+    else if (provider === TracingProvider.langSmith)
       setLangFuseConfig(null)
+    else if (provider === TracingProvider.opik)
+      setOpikConfig(null)
     if (provider === inUseTracingProvider) {
       handleTracingStatusChange({
         enabled: false,
@@ -167,6 +175,7 @@ const Panel: FC = () => {
             onChooseProvider={handleChooseProvider}
             langSmithConfig={langSmithConfig}
             langFuseConfig={langFuseConfig}
+            opikConfig={opikConfig}
             onConfigUpdated={handleTracingConfigUpdated}
             onConfigRemoved={handleTracingConfigRemoved}
             controlShowPopup={controlShowPopup}

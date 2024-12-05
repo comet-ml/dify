@@ -129,6 +129,10 @@ const translation = {
       title: 'Langfuse',
       description: 'Traces, evals, prompt management and metrics to debug and improve your LLM application.',
     },
+    opik: {
+      title: 'Opik',
+      description: 'Opik.',
+    },
     inUse: 'In use',
     configProvider: {
       title: 'Config ',

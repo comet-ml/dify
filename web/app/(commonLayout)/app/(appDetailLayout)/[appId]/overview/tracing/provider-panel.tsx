@@ -24,6 +24,7 @@ const getIcon = (type: TracingProvider) => {
   return ({
     [TracingProvider.langSmith]: LangsmithIconBig,
     [TracingProvider.langfuse]: LangfuseIconBig,
+    [TracingProvider.opik]: LangfuseIconBig,
   })[type]
 }
 
