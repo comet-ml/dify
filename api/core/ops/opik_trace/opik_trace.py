@@ -214,7 +214,7 @@ class OpikDataTrace(BaseTraceInstance):
             )
 
             process_data = json.loads(node_execution.process_data) if node_execution.process_data else {}
-            
+
             provider = None
             model = None
             total_tokens = 0
@@ -244,7 +244,7 @@ class OpikDataTrace(BaseTraceInstance):
                 run_type = "tool"
 
             parent_span_id = trace_info.workflow_app_log_id or trace_info.workflow_run_id
-                
+
             if not total_tokens:
                 total_tokens = execution_metadata.get("total_tokens", 0)
 
