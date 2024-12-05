@@ -869,13 +869,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.74"
+version = "1.35.76"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.74-py3-none-any.whl", hash = "sha256:9ac9d33d84dd9f05b35085de081552342a2c9ae22e3c4ee105723c9e92c07bd9"},
-    {file = "botocore-1.35.74.tar.gz", hash = "sha256:de5c4fa9a24cef3a758974857b5c5820a12fad345ebf33c052a5988e88f33634"},
+    {file = "botocore-1.35.76-py3-none-any.whl", hash = "sha256:b4729d12d00267b3185628f83543917b6caae292385230ab464067621aa086af"},
+    {file = "botocore-1.35.76.tar.gz", hash = "sha256:a75a42ae53395796b8300c5fefb2d65a8696dc40dc85e49cf3a769e0c0202b13"},
 ]
 
 [package.dependencies]
@@ -2070,17 +2070,17 @@ tokenizer = ["tiktoken"]
 
 [[package]]
 name = "dataclass-wizard"
-version = "0.32.0"
+version = "0.32.1"
 description = "Effortlessly marshal dataclasses to/from JSON. Leverage field properties with default values. Generate dataclass schemas from JSON input."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dataclass-wizard-0.32.0.tar.gz", hash = "sha256:b9411bc91a9a0e2224ca6a599923b8e472b170acc14580b2fa6fcf343f720fe5"},
-    {file = "dataclass_wizard-0.32.0-py2.py3-none-any.whl", hash = "sha256:36091a8d5b49b43178bf076c948ff5b848d36e42ad20adf78ae2d0312e1c09e4"},
+    {file = "dataclass-wizard-0.32.1.tar.gz", hash = "sha256:31d44224ff8acb28abb1bbf11afa5fa73d7eeec8cb2e8f9aed374135c154b617"},
+    {file = "dataclass_wizard-0.32.1-py2.py3-none-any.whl", hash = "sha256:ce2c3bbfe48b197162ffeffd74c2d4ae4ca834acf4017b001a906a07109c943b"},
 ]
 
 [package.extras]
-dev = ["Sphinx (==7.4.7)", "Sphinx (==8.1.3)", "bump2version (==1.0.1)", "coverage (>=6.2)", "dacite (==1.8.1)", "dataclass-factory (==2.16)", "dataclass-wizard[toml]", "dataclasses-json (==0.6.7)", "flake8 (>=3)", "jsons (==1.6.3)", "mashumaro (==3.15)", "pip (>=21.3.1)", "pydantic (==2.10.2)", "pytest (==8.3.3)", "pytest-cov (==6.0.0)", "pytest-mock (>=3.6.1)", "python-dotenv (>=1,<2)", "pytimeparse (==1.1.8)", "sphinx-autodoc-typehints (==2.5.0)", "sphinx-copybutton (==0.5.2)", "sphinx-issues (==5.0.0)", "tomli (>=2,<3)", "tomli (>=2,<3)", "tomli-w (>=1,<2)", "tox (==4.23.2)", "twine (==5.1.1)", "watchdog[watchmedo] (==6.0.0)", "wheel (==0.45.1)"]
+dev = ["Sphinx (==7.4.7)", "Sphinx (==8.1.3)", "bump2version (==1.0.1)", "coverage (>=6.2)", "dacite (==1.8.1)", "dataclass-factory (==2.16)", "dataclass-wizard[toml]", "dataclasses-json (==0.6.7)", "flake8 (>=3)", "jsons (==1.6.3)", "mashumaro (==3.15)", "pip (>=21.3.1)", "pydantic (==2.10.2)", "pytest (==8.3.4)", "pytest-cov (==6.0.0)", "pytest-mock (>=3.6.1)", "python-dotenv (>=1,<2)", "pytimeparse (==1.1.8)", "sphinx-autodoc-typehints (==2.5.0)", "sphinx-copybutton (==0.5.2)", "sphinx-issues (==5.0.0)", "tomli (>=2,<3)", "tomli (>=2,<3)", "tomli-w (>=1,<2)", "tox (==4.23.2)", "twine (==6.0.1)", "watchdog[watchmedo] (==6.0.0)", "wheel (==0.45.1)"]
 dotenv = ["python-dotenv (>=1,<2)"]
 timedelta = ["pytimeparse (>=1.1.7)"]
 toml = ["tomli (>=2,<3)", "tomli (>=2,<3)", "tomli-w (>=1,<2)"]
@@ -6377,13 +6377,13 @@ files = [
 
 [[package]]
 name = "opik"
-version = "1.2.0"
+version = "1.2.1"
 description = "Comet tool for logging and evaluating LLM traces"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "opik-1.2.0-py3-none-any.whl", hash = "sha256:be2381e302f991478279afb6663367d171488be699da2f20b7cd1b3ad1f2f164"},
-    {file = "opik-1.2.0.tar.gz", hash = "sha256:1e25c8e36a54c169bf2e6da7583e800e02b60e1f05143468bc44a65c26cf8bad"},
+    {file = "opik-1.2.1-py3-none-any.whl", hash = "sha256:14d02d9766e93ee887753b05c0bfa8aa8a57fb0a2c20513fe25461f9d8f5deb8"},
+    {file = "opik-1.2.1.tar.gz", hash = "sha256:a96a5bcc3c68461ee50c86e01d14cba9cc84fe81f9316800f34d29f0039090ac"},
 ]
 
 [package.dependencies]
@@ -7569,13 +7569,13 @@ rsa = ["cryptography"]
 
 [[package]]
 name = "pyobvector"
-version = "0.1.16"
+version = "0.1.17"
 description = "A python SDK for OceanBase Vector Store, based on SQLAlchemy, compatible with Milvus API."
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "pyobvector-0.1.16-py3-none-any.whl", hash = "sha256:d2ec2f974f0a32b65fa1558a39e7cb36d8e14b2192a7d603990f183c5cae79d7"},
-    {file = "pyobvector-0.1.16.tar.gz", hash = "sha256:2d0fdd90d85cdfc8dc1d7b6950cd4fbb160a0696065c7d6ebdf70d09745896c5"},
+    {file = "pyobvector-0.1.17-py3-none-any.whl", hash = "sha256:faf73d14ded736f21f2ce9d92d0964de9d477afeacfbf6d41db0b5b18495aadd"},
+    {file = "pyobvector-0.1.17.tar.gz", hash = "sha256:bfc89f8de88806b63d64d7dfc15e5f9890243387ba53cc69247de52a46045d5a"},
 ]
 
 [package.dependencies]
@@ -9236,13 +9236,13 @@ docs = ["sphinx"]
 
 [[package]]
 name = "six"
-version = "1.16.0"
+version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
-    {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
-    {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+    {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
+    {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
 ]
 
 [[package]]
@@ -9955,13 +9955,13 @@ requests = ">=2.0.0"
 
 [[package]]
 name = "typer"
-version = "0.15.0"
+version = "0.15.1"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typer-0.15.0-py3-none-any.whl", hash = "sha256:bd16241db7e0f989ce1a0d8faa5aa1e43b9b9ac3fd1d4b8bcff91503d6717e38"},
-    {file = "typer-0.15.0.tar.gz", hash = "sha256:8995452a598922ed8d8ad8c06ca63a218881ab601f5fa6fb0c511f7776497c7e"},
+    {file = "typer-0.15.1-py3-none-any.whl", hash = "sha256:7994fb7b8155b64d3402518560648446072864beefd44aa2dc36972a5972e847"},
+    {file = "typer-0.15.1.tar.gz", hash = "sha256:a0588c0a7fa68a1978a069818657778f86abe6ff5ea6abf472f940a08bfe4f0a"},
 ]
 
 [package.dependencies]
@@ -11007,13 +11007,13 @@ requests = "*"
 
 [[package]]
 name = "zhipuai"
-version = "2.1.5.20241203"
+version = "2.1.5.20241204"
 description = "A SDK library for accessing big model apis from ZhipuAI"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "zhipuai-2.1.5.20241203-py3-none-any.whl", hash = "sha256:77267aebbb7dabbff1d0706c4fc1d529feb17959613d1b130ba58a733548c21c"},
-    {file = "zhipuai-2.1.5.20241203.tar.gz", hash = "sha256:4096a467cb3f43c4eb63e6e19564d2347624ceaf89a529b9e849fff0935f3da2"},
+    {file = "zhipuai-2.1.5.20241204-py3-none-any.whl", hash = "sha256:063c7527d6741ced82eedb19d53fd24ce61cf43ab835ee3c0262843f59503a7c"},
+    {file = "zhipuai-2.1.5.20241204.tar.gz", hash = "sha256:888b42a83c8f1daf07375b84e560219eedab96b9f9e59542f0329928291db635"},
 ]
 
 [package.dependencies]
@@ -11229,4 +11229,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "3ff7c07e89423f054b605e8348c48da19c996e2357e6a85a70cee6df22984995"
+content-hash = "ba5790d76b56701a46b93a881c84d24299f986fb8135db1ebe3ddde8bdc43b1e"

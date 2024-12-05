@@ -75,6 +75,14 @@ def wrap_dict(key_name, data):
     return data
 
 
+def wrap_metadata(metadata, **kwargs):
+    metadata["created_from"] = "opik"
+
+    metadata.update(kwargs)
+
+    return metadata
+
+
 class OpikDataTrace(BaseTraceInstance):
     def __init__(
         self,
@@ -111,16 +119,12 @@ class OpikDataTrace(BaseTraceInstance):
         opik_trace_id = convert_uuid4_to_uuid7(dify_trace_id, UUIDV7_NS)
 
         if trace_info.message_id:
-            # TODO: Create dict directly instead
-            trace_metadata = trace_info.metadata
-            trace_metadata["message_id"] = trace_info.message_id
-
             trace_data = TraceData(
                 id=opik_trace_id,
                 name=TraceTaskName.MESSAGE_TRACE.value,
                 start_time=trace_info.start_time,
                 end_time=trace_info.end_time,
-                metadata=trace_info.metadata,
+                metadata=wrap_metadata(trace_info.metadata, message_id=trace_info.message_id),
                 input=wrap_dict("input", trace_info.workflow_run_inputs),
                 output=wrap_dict("output", trace_info.workflow_run_outputs),
                 tags=["message", "workflow"],
@@ -137,7 +141,7 @@ class OpikDataTrace(BaseTraceInstance):
             type="tool",
             start_time=trace_info.start_time,
             end_time=trace_info.end_time,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=wrap_dict("input", trace_info.workflow_run_inputs),
             output=wrap_dict("output", trace_info.workflow_run_outputs),
             tags=["workflow"],
@@ -252,7 +256,7 @@ class OpikDataTrace(BaseTraceInstance):
                 type=run_type,
                 start_time=created_at,
                 end_time=finished_at,
-                metadata=metadata,
+                metadata=wrap_metadata(metadata),
                 input=wrap_dict("input", inputs),
                 output=wrap_dict("output", outputs),
                 tags=["node_execution"],
@@ -296,7 +300,7 @@ class OpikDataTrace(BaseTraceInstance):
             name=TraceTaskName.MESSAGE_TRACE.value,
             start_time=trace_info.start_time,
             end_time=trace_info.end_time,
-            metadata=metadata,
+            metadata=wrap_metadata(metadata),
             input=trace_info.inputs,
             output=message_data.answer,
             tags=["message", str(trace_info.conversation_mode)],
@@ -310,7 +314,7 @@ class OpikDataTrace(BaseTraceInstance):
             type="llm",
             start_time=trace_info.start_time,
             end_time=trace_info.end_time,
-            metadata=metadata,
+            metadata=wrap_metadata(metadata),
             input={"input": trace_info.inputs},
             output={"output": message_data.answer},
             tags=["llm", str(trace_info.conversation_mode)],
@@ -330,7 +334,7 @@ class OpikDataTrace(BaseTraceInstance):
             type="tool",
             start_time=trace_info.start_time or trace_info.message_data.created_at,
             end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=wrap_dict("input", trace_info.inputs),
             output={
                 "action": trace_info.action,
@@ -350,7 +354,7 @@ class OpikDataTrace(BaseTraceInstance):
             type="tool",
             start_time=trace_info.start_time or trace_info.message_data.created_at,
             end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=wrap_dict("input", trace_info.inputs),
             output=wrap_dict("output", trace_info.suggested_question),
             tags=["suggested_question"],
@@ -365,7 +369,7 @@ class OpikDataTrace(BaseTraceInstance):
             type="tool",
             start_time=trace_info.start_time or trace_info.message_data.created_at,
             end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=wrap_dict("input", trace_info.inputs),
             output={"documents": trace_info.documents},
             tags=["dataset_retrieval"],
@@ -380,7 +384,7 @@ class OpikDataTrace(BaseTraceInstance):
             type="tool",
             start_time=trace_info.start_time,
             end_time=trace_info.end_time,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=wrap_dict("input", trace_info.tool_inputs),
             output=wrap_dict("output", trace_info.tool_outputs),
             tags=["tool", trace_info.tool_name],
@@ -394,7 +398,7 @@ class OpikDataTrace(BaseTraceInstance):
             name=TraceTaskName.GENERATE_NAME_TRACE.value,
             start_time=trace_info.start_time,
             end_time=trace_info.end_time,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=trace_info.inputs,
             output=trace_info.outputs,
             tags=["message", str(trace_info.conversation_mode)],
@@ -408,7 +412,7 @@ class OpikDataTrace(BaseTraceInstance):
             name=TraceTaskName.GENERATE_NAME_TRACE.value,
             start_time=trace_info.start_time or trace_info.message_data.created_at,
             end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=trace_info.metadata,
+            metadata=wrap_metadata(trace_info.metadata),
             input=wrap_dict("input", trace_info.inputs),
             output=wrap_dict("output", trace_info.outputs),
             tags=["generate_name"],
@@ -437,8 +441,8 @@ class OpikDataTrace(BaseTraceInstance):
 
     def api_check(self):
         try:
+            self.opik_client.auth_check()
             return True
-            # return self.opik_client.auth_check()
         except Exception as e:
             logger.info(f"Opik API check failed: {str(e)}", exc_info=True)
             raise ValueError(f"Opik API check failed: {str(e)}")
@@ -446,7 +450,6 @@ class OpikDataTrace(BaseTraceInstance):
     def get_project_url(self):
         try:
             return self.opik_client.get_project_url(project_name=self.project)
-            # return get_project_url(workspace=self.opik_client._workspace, project_name=self.project)
         except Exception as e:
             logger.info(f"Opik get run url failed: {str(e)}", exc_info=True)
             raise ValueError(f"Opik get run url failed: {str(e)}")

@@ -64,7 +64,6 @@ class OpsService:
                 new_decrypt_tracing_config.update({"project_url": "https://www.comet.com/opik/"})
 
         trace_config_data.tracing_config = new_decrypt_tracing_config
-        print("TRACE CONFIG", trace_config_data.to_dict())
         return trace_config_data.to_dict()
 
     @classmethod
