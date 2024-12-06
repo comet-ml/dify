@@ -9,7 +9,7 @@ import { TracingProvider } from './type'
 import TracingIcon from './tracing-icon'
 import ConfigButton from './config-button'
 import cn from '@/utils/classnames'
-import { LangfuseIcon, LangsmithIcon } from '@/app/components/base/icons/src/public/tracing'
+import { LangfuseIcon, LangsmithIcon, OpikIcon } from '@/app/components/base/icons/src/public/tracing'
 import Indicator from '@/app/components/header/indicator'
 import { fetchTracingConfig as doFetchTracingConfig, fetchTracingStatus, updateTracingStatus } from '@/service/apps'
 import type { TracingStatus } from '@/models/app'
@@ -70,7 +70,15 @@ const Panel: FC = () => {
     })
   }
   const inUseTracingProvider: TracingProvider | null = tracingStatus?.tracing_provider || null
-  const InUseProviderIcon = inUseTracingProvider === TracingProvider.langSmith ? LangsmithIcon : LangfuseIcon
+
+  const InUseProviderIcon
+    = inUseTracingProvider === TracingProvider.langSmith
+      ? LangsmithIcon
+      : inUseTracingProvider === TracingProvider.langfuse
+        ? LangfuseIcon
+        : inUseTracingProvider === TracingProvider.opik
+          ? OpikIcon
+          : null
 
   const [langSmithConfig, setLangSmithConfig] = useState<LangSmithConfig | null>(null)
   const [langFuseConfig, setLangFuseConfig] = useState<LangFuseConfig | null>(null)

@@ -1,13 +1,10 @@
 import json
 import logging
 import os
-import uuid
 from datetime import datetime, timedelta
-from typing import Optional
 
-from opik.api_objects import opik_client
-from opik.api_objects.span import SpanData
-from opik.api_objects.trace import TraceData
+from opik import Opik, Trace
+from opik.id_helpers import uuid4_to_uuid7
 
 from core.ops.base_trace_instance import BaseTraceInstance
 from core.ops.entities.config_entity import OpikConfig
@@ -22,50 +19,11 @@ from core.ops.entities.trace_entity import (
     TraceTaskName,
     WorkflowTraceInfo,
 )
-from core.ops.utils import filter_none_values
 from extensions.ext_database import db
-from models.model import EndUser
+from models.model import EndUser, MessageFile
 from models.workflow import WorkflowNodeExecution
 
 logger = logging.getLogger(__name__)
-
-
-def convert_uuid4_to_uuid7(user_provide_uuidv4, ns):
-    last = [0, 0, 0, 0]
-
-    # Simple uuid7 implementation
-    sixteen_secs = 16_000_000_000
-    t1, rest1 = divmod(ns, sixteen_secs)
-    t2, rest2 = divmod(rest1 << 16, sixteen_secs)
-    t3, _ = divmod(rest2 << 12, sixteen_secs)
-    t3 |= 7 << 12  # Put uuid version in top 4 bits, which are 0 in t3
-
-    # The next two bytes are an int (t4) with two bits for
-    # the variant 2 and a 14 bit sequence counter which increments
-    # if the time is unchanged.
-    if t1 == last[0] and t2 == last[1] and t3 == last[2]:
-        # Stop the seq counter wrapping past 0x3FFF.
-        # This won't happen in practice, but if it does,
-        # uuids after the 16383rd with that same timestamp
-        # will not longer be correctly ordered but
-        # are still unique due to the 6 random bytes.
-        if last[3] < 0x3FFF:
-            last[3] += 1
-    else:
-        last[:] = (t1, t2, t3, 0)
-    t4 = (2 << 14) | last[3]  # Put variant 0b10 in top two bits
-
-    # Six random bytes from the provided UUIDv4
-    uuidv4 = uuid.UUID(user_provide_uuidv4)
-    assert uuidv4.version == 4
-    rand = uuidv4.bytes[-6:]
-    final_uuid = f"{t1:>08x}-{t2:>04x}-{t3:>04x}-{t4:>04x}-{rand.hex()}"
-
-    return final_uuid
-
-
-# STATIC NS
-UUIDV7_NS = 1733244176020523256
 
 
 def wrap_dict(key_name, data):
@@ -89,7 +47,7 @@ class OpikDataTrace(BaseTraceInstance):
         opik_config: OpikConfig,
     ):
         super().__init__(opik_config)
-        self.opik_client = opik_client.Opik(
+        self.opik_client = Opik(
             project_name=opik_config.project,
             workspace=opik_config.workspace,
             host=opik_config.url,
@@ -116,37 +74,37 @@ class OpikDataTrace(BaseTraceInstance):
 
     def workflow_trace(self, trace_info: WorkflowTraceInfo):
         dify_trace_id = trace_info.message_id or trace_info.workflow_app_log_id or trace_info.workflow_run_id
-        opik_trace_id = convert_uuid4_to_uuid7(dify_trace_id, UUIDV7_NS)
+        opik_trace_id = uuid4_to_uuid7(trace_info.start_time, dify_trace_id)
 
         if trace_info.message_id:
-            trace_data = TraceData(
-                id=opik_trace_id,
-                name=TraceTaskName.MESSAGE_TRACE.value,
-                start_time=trace_info.start_time,
-                end_time=trace_info.end_time,
-                metadata=wrap_metadata(trace_info.metadata, message_id=trace_info.message_id),
-                input=wrap_dict("input", trace_info.workflow_run_inputs),
-                output=wrap_dict("output", trace_info.workflow_run_outputs),
-                tags=["message", "workflow"],
-                project_name=self.project,
-            )
+            trace_data = {
+                "id": opik_trace_id,
+                "name": TraceTaskName.MESSAGE_TRACE.value,
+                "start_time": trace_info.start_time,
+                "end_time": trace_info.end_time,
+                "metadata": wrap_metadata(trace_info.metadata, message_id=trace_info.message_id),
+                "input": wrap_dict("input", trace_info.workflow_run_inputs),
+                "output": wrap_dict("output", trace_info.workflow_run_outputs),
+                "tags": ["message", "workflow"],
+                "project_name": self.project,
+            }
             self.add_trace(trace_data)
 
         span_id = trace_info.workflow_app_log_id or trace_info.workflow_run_id
-        span_data = SpanData(
-            trace_id=opik_trace_id,
-            id=convert_uuid4_to_uuid7(span_id, UUIDV7_NS),
-            parent_span_id=None,
-            name=TraceTaskName.WORKFLOW_TRACE.value,
-            type="tool",
-            start_time=trace_info.start_time,
-            end_time=trace_info.end_time,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=wrap_dict("input", trace_info.workflow_run_inputs),
-            output=wrap_dict("output", trace_info.workflow_run_outputs),
-            tags=["workflow"],
-            project_name=self.project,
-        )
+        span_data = {
+            "trace_id": opik_trace_id,
+            "id": uuid4_to_uuid7(trace_info.start_time, span_id),
+            "parent_span_id": None,
+            "name": TraceTaskName.WORKFLOW_TRACE.value,
+            "type": "tool",
+            "start_time": trace_info.start_time,
+            "end_time": trace_info.end_time,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": wrap_dict("input", trace_info.workflow_run_inputs),
+            "output": wrap_dict("output", trace_info.workflow_run_outputs),
+            "tags": ["workflow"],
+            "project_name": self.project,
+        }
 
         self.add_span(span_data)
 
@@ -248,27 +206,27 @@ class OpikDataTrace(BaseTraceInstance):
             if not total_tokens:
                 total_tokens = execution_metadata.get("total_tokens", 0)
 
-            span_data = SpanData(
-                trace_id=opik_trace_id,
-                id=convert_uuid4_to_uuid7(node_execution_id, UUIDV7_NS),
-                parent_span_id=convert_uuid4_to_uuid7(parent_span_id, UUIDV7_NS),
-                name=node_type,
-                type=run_type,
-                start_time=created_at,
-                end_time=finished_at,
-                metadata=wrap_metadata(metadata),
-                input=wrap_dict("input", inputs),
-                output=wrap_dict("output", outputs),
-                tags=["node_execution"],
-                project_name=self.project,
-                usage={
+            span_data = {
+                "trace_id": opik_trace_id,
+                "id": uuid4_to_uuid7(created_at, node_execution_id),
+                "parent_span_id": uuid4_to_uuid7(trace_info.start_time, parent_span_id),
+                "name": node_type,
+                "type": run_type,
+                "start_time": created_at,
+                "end_time": finished_at,
+                "metadata": wrap_metadata(metadata),
+                "input": wrap_dict("input", inputs),
+                "output": wrap_dict("output", outputs),
+                "tags": ["node_execution"],
+                "project_name": self.project,
+                "usage": {
                     "total_tokens": total_tokens,
                     "completion_tokens": completion_tokens,
                     "prompt_tokens": prompt_tokens,
                 },
-                model=model,
-                provider=provider,
-            )
+                "model": model,
+                "provider": provider,
+            }
 
             self.add_span(span_data)
 
@@ -295,149 +253,151 @@ class OpikDataTrace(BaseTraceInstance):
                 end_user_id = end_user_data.session_id
                 metadata["end_user_id"] = end_user_id
 
-        trace_data = TraceData(
-            id=convert_uuid4_to_uuid7(message_id, UUIDV7_NS),
-            name=TraceTaskName.MESSAGE_TRACE.value,
-            start_time=trace_info.start_time,
-            end_time=trace_info.end_time,
-            metadata=wrap_metadata(metadata),
-            input=trace_info.inputs,
-            output=message_data.answer,
-            tags=["message", str(trace_info.conversation_mode)],
-            project_name=self.project,
-        )
-        self.add_trace(trace_data)
+        trace_data = {
+            "id": uuid4_to_uuid7(trace_info.start_time, message_id),
+            "name": TraceTaskName.MESSAGE_TRACE.value,
+            "start_time": trace_info.start_time,
+            "end_time": trace_info.end_time,
+            "metadata": wrap_metadata(metadata),
+            "input": trace_info.inputs,
+            "output": message_data.answer,
+            "tags": ["message", str(trace_info.conversation_mode)],
+            "project_name": self.project,
+        }
+        trace = self.add_trace(trace_data)
 
-        span_data = SpanData(
-            trace_id=trace_data.id,
-            name="llm",
-            type="llm",
-            start_time=trace_info.start_time,
-            end_time=trace_info.end_time,
-            metadata=wrap_metadata(metadata),
-            input={"input": trace_info.inputs},
-            output={"output": message_data.answer},
-            tags=["llm", str(trace_info.conversation_mode)],
-            usage={
+        span_data = {
+            "trace_id": trace.id,
+            "name": "llm",
+            "type": "llm",
+            "start_time": trace_info.start_time,
+            "end_time": trace_info.end_time,
+            "metadata": wrap_metadata(metadata),
+            "input": {"input": trace_info.inputs},
+            "output": {"output": message_data.answer},
+            "tags": ["llm", str(trace_info.conversation_mode)],
+            "usage": {
                 "completion_tokens": trace_info.answer_tokens,
                 "prompt_tokens": trace_info.message_tokens,
                 "total_tokens": trace_info.total_tokens,
             },
-            project_name=self.project,
-        )
+            "project_name": self.project,
+        }
         self.add_span(span_data)
 
     def moderation_trace(self, trace_info: ModerationTraceInfo):
-        span_data = SpanData(
-            trace_id=convert_uuid4_to_uuid7(trace_info.message_id, UUIDV7_NS),
-            name=TraceTaskName.MODERATION_TRACE.value,
-            type="tool",
-            start_time=trace_info.start_time or trace_info.message_data.created_at,
-            end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=wrap_dict("input", trace_info.inputs),
-            output={
+        start_time = trace_info.start_time or trace_info.message_data.created_at
+
+        span_data = {
+            "trace_id": uuid4_to_uuid7(start_time, trace_info.message_id),
+            "name": TraceTaskName.MODERATION_TRACE.value,
+            "type": "tool",
+            "start_time": start_time,
+            "end_time": trace_info.end_time or trace_info.message_data.updated_at,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": wrap_dict("input", trace_info.inputs),
+            "output": {
                 "action": trace_info.action,
                 "flagged": trace_info.flagged,
                 "preset_response": trace_info.preset_response,
                 "inputs": trace_info.inputs,
             },
-            tags=["moderation"],
-        )
+            "tags": ["moderation"],
+        }
 
         self.add_span(span_data)
 
     def suggested_question_trace(self, trace_info: SuggestedQuestionTraceInfo):
-        span_data = SpanData(
-            trace_id=convert_uuid4_to_uuid7(trace_info.message_id, UUIDV7_NS),
-            name=TraceTaskName.SUGGESTED_QUESTION_TRACE.value,
-            type="tool",
-            start_time=trace_info.start_time or trace_info.message_data.created_at,
-            end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=wrap_dict("input", trace_info.inputs),
-            output=wrap_dict("output", trace_info.suggested_question),
-            tags=["suggested_question"],
-        )
+        start_time = trace_info.start_time or trace_info.message_data.created_at
+
+        span_data = {
+            "trace_id": uuid4_to_uuid7(start_time, trace_info.message_id),
+            "name": TraceTaskName.SUGGESTED_QUESTION_TRACE.value,
+            "type": "tool",
+            "start_time": start_time,
+            "end_time": trace_info.end_time or trace_info.message_data.updated_at,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": wrap_dict("input", trace_info.inputs),
+            "output": wrap_dict("output", trace_info.suggested_question),
+            "tags": ["suggested_question"],
+        }
 
         self.add_span(span_data)
 
     def dataset_retrieval_trace(self, trace_info: DatasetRetrievalTraceInfo):
-        span_data = SpanData(
-            trace_id=convert_uuid4_to_uuid7(trace_info.message_id, UUIDV7_NS),
-            name=TraceTaskName.DATASET_RETRIEVAL_TRACE.value,
-            type="tool",
-            start_time=trace_info.start_time or trace_info.message_data.created_at,
-            end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=wrap_dict("input", trace_info.inputs),
-            output={"documents": trace_info.documents},
-            tags=["dataset_retrieval"],
-        )
+        start_time = trace_info.start_time or trace_info.message_data.created_at
+
+        span_data = {
+            "trace_id": uuid4_to_uuid7(start_time, trace_info.message_id),
+            "name": TraceTaskName.DATASET_RETRIEVAL_TRACE.value,
+            "type": "tool",
+            "start_time": start_time,
+            "end_time": trace_info.end_time or trace_info.message_data.updated_at,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": wrap_dict("input", trace_info.inputs),
+            "output": {"documents": trace_info.documents},
+            "tags": ["dataset_retrieval"],
+        }
 
         self.add_span(span_data)
 
     def tool_trace(self, trace_info: ToolTraceInfo):
-        span_data = SpanData(
-            trace_id=convert_uuid4_to_uuid7(trace_info.message_id, UUIDV7_NS),
-            name=trace_info.tool_name,
-            type="tool",
-            start_time=trace_info.start_time,
-            end_time=trace_info.end_time,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=wrap_dict("input", trace_info.tool_inputs),
-            output=wrap_dict("output", trace_info.tool_outputs),
-            tags=["tool", trace_info.tool_name],
-        )
+        span_data = {
+            "trace_id": uuid4_to_uuid7(trace_info.start_time, trace_info.message_id),
+            "name": trace_info.tool_name,
+            "type": "tool",
+            "start_time": trace_info.start_time,
+            "end_time": trace_info.end_time,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": wrap_dict("input", trace_info.tool_inputs),
+            "output": wrap_dict("output", trace_info.tool_outputs),
+            "tags": ["tool", trace_info.tool_name],
+        }
 
         self.add_span(span_data)
 
     def generate_name_trace(self, trace_info: GenerateNameTraceInfo):
-        trace_data = TraceData(
-            id=convert_uuid4_to_uuid7(trace_info.message_id, UUIDV7_NS),
-            name=TraceTaskName.GENERATE_NAME_TRACE.value,
-            start_time=trace_info.start_time,
-            end_time=trace_info.end_time,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=trace_info.inputs,
-            output=trace_info.outputs,
-            tags=["message", str(trace_info.conversation_mode)],
-            project_name=self.project,
-        )
+        trace_data = {
+            "id": uuid4_to_uuid7(trace_info.start_time, trace_info.message_id),
+            "name": TraceTaskName.GENERATE_NAME_TRACE.value,
+            "start_time": trace_info.start_time,
+            "end_time": trace_info.end_time,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": trace_info.inputs,
+            "output": trace_info.outputs,
+            "tags": ["message", str(trace_info.conversation_mode)],
+            "project_name": self.project,
+        }
 
-        self.add_trace(trace_data)
+        trace = self.add_trace(trace_data)
 
-        span_data = SpanData(
-            trace_id=convert_uuid4_to_uuid7(trace_info.message_id, UUIDV7_NS),
-            name=TraceTaskName.GENERATE_NAME_TRACE.value,
-            start_time=trace_info.start_time or trace_info.message_data.created_at,
-            end_time=trace_info.end_time or trace_info.message_data.updated_at,
-            metadata=wrap_metadata(trace_info.metadata),
-            input=wrap_dict("input", trace_info.inputs),
-            output=wrap_dict("output", trace_info.outputs),
-            tags=["generate_name"],
-        )
+        span_data = {
+            "trace_id": trace.id,
+            "name": TraceTaskName.GENERATE_NAME_TRACE.value,
+            "start_time": trace_info.start_time or trace_info.message_data.created_at,
+            "end_time": trace_info.end_time or trace_info.message_data.updated_at,
+            "metadata": wrap_metadata(trace_info.metadata),
+            "input": wrap_dict("input", trace_info.inputs),
+            "output": wrap_dict("output", trace_info.outputs),
+            "tags": ["generate_name"],
+        }
 
         self.add_span(span_data)
 
-    def add_trace(self, opik_trace_data: Optional[TraceData] = None):
+    def add_trace(self, opik_trace_data: dict) -> Trace:
         try:
-            self.opik_client.trace(**opik_trace_data.__dict__)
+            trace = self.opik_client.trace(**opik_trace_data)
             logger.debug("Opik Trace created successfully")
+            return trace
         except Exception as e:
             raise ValueError(f"Opik Failed to create trace: {str(e)}")
 
-    def add_span(self, opik_span_data: Optional[SpanData] = None):
+    def add_span(self, opik_span_data: dict):
         try:
-            self.opik_client.span(**opik_span_data.__dict__)
+            self.opik_client.span(**opik_span_data)
             logger.debug("Opik Span created successfully")
         except Exception as e:
             raise ValueError(f"Opik Failed to create span: {str(e)}")
-
-    def update_span(self, span, opik_span_data: Optional[SpanData] = None):
-        format_span_data = filter_none_values(opik_span_data.model_dump()) if opik_span_data else {}
-
-        span.end(**format_span_data)
 
     def api_check(self):
         try:
